@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.4
+
+### Patch Changes
+
+- 6f77763: test version update
+
 ## 0.0.3
 
 ### Patch Changes
