@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.16
+
+### Patch Changes
+
+- f9fc9b4: t
+
 ## 0.0.15
 
 ### Patch Changes
