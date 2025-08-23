@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.5
+
+### Patch Changes
+
+- d4daca8: test
+
 ## 0.0.4
 
 ### Patch Changes
