@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.6
+
+### Patch Changes
+
+- c162b5d: test
+
 ## 0.0.5
 
 ### Patch Changes
