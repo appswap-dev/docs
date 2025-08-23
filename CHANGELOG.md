@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.10
+
+### Patch Changes
+
+- 8442eed: test
+
 ## 0.0.9
 
 ### Patch Changes
