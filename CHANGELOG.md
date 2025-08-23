@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.7
+
+### Patch Changes
+
+- 4e8a6a8: test
+
 ## 0.0.6
 
 ### Patch Changes
