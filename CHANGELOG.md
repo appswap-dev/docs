@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.9
+
+### Patch Changes
+
+- a2ec538: test
+
 ## 0.0.8
 
 ### Patch Changes
