@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.17
+
+### Patch Changes
+
+- 98fe660: github release
+
 ## 0.0.16
 
 ### Patch Changes
