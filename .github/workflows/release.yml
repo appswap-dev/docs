@@ -44,11 +44,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v$(node -p "require('./package.json').version")
-          name: Release v$(node -p "require('./package.json').version")
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: Release v${{ steps.package-version.outputs.version }}
           body: |
             Automated release from commit ${{ github.sha }}
           files: |
