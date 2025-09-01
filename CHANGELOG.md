@@ -1,5 +1,11 @@
 # docs
 
+## 0.0.18
+
+### Patch Changes
+
+- d37b684: build fix
+
 ## 0.0.17
 
 ### Patch Changes
