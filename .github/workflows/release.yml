@@ -40,5 +40,18 @@ jobs:
           git add .
           git commit -m "[ci skip] chore: release" || echo "No changes to commit"
           git push origin HEAD:${{ github.ref }}
+          pnpm pack --out appswap-docs.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v$(node -p "require('./package.json').version")
+          name: Release v$(node -p "require('./package.json').version")
+          body: |
+            Automated release from commit ${{ github.sha }}
+          files: |
+            appswap-docs.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
