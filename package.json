@@ -10,9 +10,9 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
+    "test": "echo \"Error: no test specified\" && exit 0",
     "preview": "astro preview",
-    "astro": "astro",
-    "changeset": "changeset"
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.35.2",
@@ -21,9 +21,6 @@
   },
   "appswap": {
     "servePath": "dist"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.29.5"
   },
   "packageManager": "pnpm@10.14.0"
 }
