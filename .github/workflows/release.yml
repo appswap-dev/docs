@@ -28,34 +28,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build and Publish
-        run: |
-          pnpm exec changeset version
-          pnpm build
-          npm config set @appswap:registry=https://npm.appswap.dev/
-          npm config set //npm.appswap.dev/:_authToken=${{ secrets.NPM_APPSWAP_DEV_TOKEN }}
-          pnpm exec changeset publish
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "[ci skip] chore: release" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref }}
-          pnpm pack --out appswap-docs.tgz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get package version
-        id: package-version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Calculate version
+        uses: app-swap/action-version@v1
         with:
-          tag_name: v${{ steps.package-version.outputs.version }}
-          name: Release v${{ steps.package-version.outputs.version }}
-          body: |
-            Automated release from commit ${{ github.sha }}
-          files: |
-            appswap-docs.tgz
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: |
+          cat package.json
+          pnpm build
+
+      # - name: Publish
+      #   uses: app-swap/action-version@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+      #     npm config set @appswap:registry=https://npm.appswap.dev/
+      #     npm config set //npm.appswap.dev/:_authToken=${{ secrets.NPM_APPSWAP_DEV_TOKEN }}
+      #     pnpm exec changeset publish
+      #     git config --local user.name "github-actions[bot]"
+      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add .
+      #     git commit -m "[ci skip] chore: release" || echo "No changes to commit"
+      #     git push origin HEAD:${{ github.ref }}
+      #     pnpm pack --out appswap-docs.tgz
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Calculate version
+      #   uses: app-swap/action-version@v1

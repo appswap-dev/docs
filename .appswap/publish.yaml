@@ -1,0 +1,28 @@
+branches:
+  main:
+    destinations:
+      - npm
+      - github
+    versionStrategy: patch
+  feature/*:
+    destinations:
+      - npm
+    versionStrategy: branch
+  hotfix/*:
+    destinations:
+      - npm
+      - github
+    versionStrategy: patch
+destinations:
+  npm:
+    type: npm
+    registry: https://registry.npmjs.org
+  github:
+    type: github
+    releaseNotes: true
+hooks:
+  prepublish:
+    - npm run build
+    - npm test
+  postpublish:
+    - echo "Published successfully!"

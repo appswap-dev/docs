@@ -1,0 +1,6 @@
+defaultStrategy: patch
+tagPrefix: v
+changelog:
+  enabled: true
+  format: conventional
+  file: CHANGELOG.md
