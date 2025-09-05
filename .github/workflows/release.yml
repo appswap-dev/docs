@@ -33,10 +33,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build
-        run: |
-          pnpm build
-
       - name: Publish
         run: |
           npm config set //npm.appswap.dev/:_authToken=${{ secrets.NPM_APPSWAP_DEV_TOKEN }}
