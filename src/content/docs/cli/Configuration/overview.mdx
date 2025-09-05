@@ -1,0 +1,321 @@
+---
+title: Configuration Overview
+description: Understanding AppSwap CLI configuration files and structure.
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+AppSwap CLI uses YAML configuration files to define your publishing strategy, version calculation, and automation hooks. This flexible approach allows you to version-control your CI/CD configuration alongside your code.
+
+## Configuration Structure
+
+When you run `appswap init`, it creates a `.appswap/` directory with the following structure:
+
+<FileTree>
+- .appswap/
+  - publish.yaml
+  - version.yaml
+  - hooks/
+    - prepublish.sh
+    - postpublish.sh
+  - examples/
+    - advanced-dist-tags.yaml
+    - multi-registry.yaml
+</FileTree>
+
+## Core Configuration Files
+
+### `publish.yaml`
+
+Defines publishing destinations, branch-specific rules, and deployment strategies.
+
+```yaml
+branches:
+  main:
+    destinations: [npm, github]
+    versionStrategy: minor
+    distTag: latest
+  develop:
+    destinations: [npm]
+    versionStrategy: minor
+    distTag: dev
+
+destinations:
+  npm:
+    type: npm
+    registry: https://registry.npmjs.org
+  github:
+    type: github
+    releaseNotes: true
+```
+
+### `version.yaml`
+
+Controls how version numbers are calculated and managed.
+
+```yaml
+defaultStrategy: minor
+tagPrefix: v
+changelog:
+  enabled: true
+  format: conventional
+  file: CHANGELOG.md
+```
+
+## Configuration Hierarchy
+
+AppSwap CLI follows a hierarchical configuration approach:
+
+1. **Command-line arguments** (highest priority)
+2. **Environment variables**
+3. **Project configuration** (`.appswap/`)
+4. **Default values** (lowest priority)
+
+### Example Override
+
+```bash
+# Configuration says 'minor', but command forces 'patch'
+appswap version --strategy patch
+
+# Configuration says publish to 'npm,github', but command forces only 'npm'
+appswap publish --target npm
+```
+
+## Environment Variables
+
+You can override configuration using environment variables:
+
+```bash
+# Authentication
+export NPM_TOKEN="your-npm-token"
+export GITHUB_TOKEN="your-github-token"
+
+# Behavior overrides
+export APPSWAP_DEFAULT_STRATEGY="patch"
+export APPSWAP_DRY_RUN="true"
+```
+
+## Configuration Validation
+
+AppSwap CLI validates your configuration and provides helpful error messages:
+
+```bash
+appswap doctor
+```
+
+This command checks:
+- ✅ Configuration file syntax
+- ✅ Required fields are present
+- ✅ Authentication tokens are available
+- ✅ Git repository is properly configured
+- ✅ Dependencies are installed
+
+## Advanced Configuration
+
+### Branch Patterns
+
+Use glob patterns to match multiple branches:
+
+```yaml
+branches:
+  "feature/*":
+    destinations: [npm]
+    versionStrategy: branch
+    distTag: feature
+  "hotfix/*":
+    destinations: [npm, github]
+    versionStrategy: patch
+    distTag: hotfix
+```
+
+### Conditional Destinations
+
+Different destinations based on conditions:
+
+```yaml
+branches:
+  main:
+    destinations: [npm-public, github]
+  develop:
+    destinations: [npm-internal]
+    
+destinations:
+  npm-public:
+    type: npm
+    registry: https://registry.npmjs.org
+  npm-internal:
+    type: npm
+    registry: https://npm.company.com
+```
+
+### Custom Build Commands
+
+Run different builds for different branches:
+
+```yaml
+branches:
+  main:
+    buildCommand: "npm run build:production"
+    destinations: [npm, github]
+  develop:
+    buildCommand: "npm run build:development"
+    destinations: [npm]
+```
+
+## Configuration Templates
+
+AppSwap CLI provides templates for common scenarios:
+
+### Library Project
+```bash
+appswap init --template library
+```
+
+### Enterprise Package
+```bash
+appswap init --template enterprise
+```
+
+### Monorepo Package
+```bash
+appswap init --template monorepo
+```
+
+## Best Practices
+
+### 1. Version Control Configuration
+
+Always commit your `.appswap/` directory:
+
+```gitignore
+# ✅ Include configuration
+.appswap/
+
+# ❌ Don't include tokens
+.env
+.env.local
+```
+
+### 2. Environment-Specific Settings
+
+Use different configurations for different environments:
+
+```yaml
+destinations:
+  npm-staging:
+    type: npm
+    registry: https://npm-staging.company.com
+  npm-production:
+    type: npm
+    registry: https://npm.company.com
+```
+
+### 3. Secure Token Management
+
+Never hardcode tokens in configuration files:
+
+```yaml
+# ❌ Don't do this
+destinations:
+  npm:
+    type: npm
+    token: "npm_xxxxxxxxxxxx"
+
+# ✅ Do this instead
+destinations:
+  npm:
+    type: npm
+    # Token read from NPM_TOKEN environment variable
+```
+
+### 4. Gradual Rollout
+
+Start with dry-run mode, then gradually enable features:
+
+```bash
+# Phase 1: Test configuration
+appswap version --dry-run
+appswap publish --dry-run
+
+# Phase 2: Enable versioning only
+appswap version
+
+# Phase 3: Enable publishing
+appswap publish
+```
+
+## Troubleshooting Configuration
+
+### Common Issues
+
+**Invalid YAML syntax**
+```bash
+Error: Invalid YAML in .appswap/publish.yaml
+  Line 5: mapping values are not allowed here
+```
+
+**Missing required fields**
+```bash
+Error: Missing required field 'type' in destination 'npm'
+```
+
+**Authentication issues**
+```bash
+Error: NPM_TOKEN environment variable not set
+```
+
+### Debugging Tools
+
+**Validate configuration**
+```bash
+appswap doctor --verbose
+```
+
+**Show resolved configuration**
+```bash
+appswap config show
+```
+
+**Test branch matching**
+```bash
+appswap config test-branch feature/new-ui
+```
+
+## Migration from Other Tools
+
+### From `np`
+```bash
+# Old workflow
+np patch
+
+# New workflow
+appswap version --strategy patch
+appswap publish
+```
+
+### From `semantic-release`
+```bash
+# Import semantic-release config
+appswap init --import-semantic-release
+```
+
+### From manual `npm publish`
+```bash
+# Old workflow
+npm version patch
+npm publish
+git push --tags
+
+# New workflow
+appswap version --strategy patch
+appswap publish
+```
+
+## Next Steps
+
+Now that you understand the configuration system:
+
+1. [Configure Publishing](/configuration/publishing/) - Set up destinations and branch rules
+2. [Configure Versioning](/configuration/versioning/) - Define version calculation strategies
+3. [Set Up Hooks](/configuration/hooks/) - Add custom automation scripts
+4. [Branch Strategies](/configuration/branches/) - Configure branch-specific behavior

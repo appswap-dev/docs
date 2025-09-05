@@ -1,0 +1,294 @@
+---
+title: Quick Start
+description: Get up and running with AppSwap CLI in minutes.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+This guide will get you up and running with AppSwap CLI in just a few minutes. We'll set up a basic publishing workflow that works with NPM and GitHub Releases.
+
+## Prerequisites
+
+Make sure you have:
+- [Node.js 18+](../installation/#requirements)
+- [AppSwap CLI installed](../installation/)
+- A Git repository with a `package.json` file
+- NPM and GitHub tokens (for publishing)
+
+## Step-by-Step Setup
+
+<Steps>
+
+1. **Initialize AppSwap CLI in your project**
+
+   Navigate to your project directory and run:
+
+   ```bash
+   cd your-project
+   appswap init
+   ```
+
+   This creates the `.appswap/` directory with default configuration files.
+
+2. **Review the generated configuration**
+
+   AppSwap CLI creates several configuration files:
+
+   ```
+   .appswap/
+   ├── publish.yaml    # Publishing destinations and branch rules
+   ├── version.yaml    # Version calculation settings
+   └── hooks/          # Custom scripts (optional)
+   ```
+
+3. **Configure your publishing destinations**
+
+   Edit `.appswap/publish.yaml` to match your needs:
+
+   ```yaml
+   branches:
+     main:
+       destinations:
+         - npm
+         - github
+       versionStrategy: minor
+       distTag: latest
+     develop:
+       destinations:
+         - npm
+       versionStrategy: minor
+       distTag: dev
+
+   destinations:
+     npm:
+       type: npm
+       registry: https://registry.npmjs.org
+     github:
+       type: github
+       releaseNotes: true
+       config:
+         uploadAssets: true
+   ```
+
+4. **Set up authentication**
+
+   Create environment variables for your tokens:
+
+   ```bash
+   # For NPM publishing
+   export NPM_TOKEN="your-npm-token"
+
+   # For GitHub Releases
+   export GITHUB_TOKEN="your-github-token"
+   ```
+
+   Or add them to your CI/CD environment.
+
+5. **Test with dry run**
+
+   Before making any real changes, test your configuration:
+
+   ```bash
+   # Check what version would be calculated
+   appswap version --dry-run
+
+   # Check what would be published
+   appswap publish --dry-run
+   ```
+
+6. **Create your first version**
+
+   When you're ready, create a new version:
+
+   ```bash
+   appswap version --message "Release v1.0.0"
+   ```
+
+   This will:
+   - Calculate the next version number
+   - Update `package.json`
+   - Create a git commit and tag
+
+7. **Publish your package**
+
+   Publish to your configured destinations:
+
+   ```bash
+   appswap publish
+   ```
+
+   This will:
+   - Publish to NPM with the correct dist-tag
+   - Create a GitHub Release with assets
+   - Run any configured hooks
+
+</Steps>
+
+## Example Workflow
+
+Here's what a typical workflow looks like:
+
+```bash
+# 1. Make your changes
+git add .
+git commit -m "Add new feature"
+
+# 2. Create a new version
+appswap version --message "Release new feature"
+
+# 3. Publish everywhere
+appswap publish
+
+# 4. Push to remote (if not automated)
+git push origin main --tags
+```
+
+## Branch-Specific Behavior
+
+AppSwap CLI automatically behaves differently based on your current branch:
+
+### Main Branch
+```bash
+git checkout main
+appswap publish
+# → Publishes to NPM as 'latest'
+# → Creates GitHub Release
+```
+
+### Develop Branch
+```bash
+git checkout develop
+appswap publish
+# → Publishes to NPM as 'dev'
+# → No GitHub Release
+```
+
+### Feature Branch
+```bash
+git checkout feature/awesome-feature
+appswap publish
+# → Publishes to NPM as 'feature'
+# → Version includes branch name
+```
+
+## CI/CD Integration
+
+### GitHub Actions Example
+
+Create `.github/workflows/release.yml`:
+
+```yaml
+name: Release
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Install AppSwap CLI
+        run: npm install -g @appswap/cli
+
+      - name: Version and Publish
+        run: |
+          appswap version --message "Automated release"
+          appswap publish --skip-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Common Patterns
+
+### Preview Releases
+
+Create preview releases from feature branches:
+
+```bash
+git checkout feature/new-ui
+appswap publish --target npm
+# Publishes as: your-package@1.2.3-feature-new-ui.1
+```
+
+### Hotfix Releases
+
+Quick patches with automatic versioning:
+
+```bash
+git checkout hotfix/security-fix
+appswap version --strategy patch
+appswap publish
+# Creates: 1.2.4 with 'hotfix' dist-tag
+```
+
+### Multi-Registry Publishing
+
+Publish to multiple registries:
+
+```yaml
+destinations:
+  npm-public:
+    type: npm
+    registry: https://registry.npmjs.org
+  npm-private:
+    type: npm
+    registry: https://npm.internal.company.com
+```
+
+## Troubleshooting
+
+### Version Not Calculated Correctly
+
+Check your published versions:
+```bash
+appswap status
+```
+
+Specify a strategy manually:
+```bash
+appswap version --strategy patch
+```
+
+### Authentication Issues
+
+Verify your tokens:
+```bash
+npm whoami --registry https://registry.npmjs.org
+```
+
+Test GitHub access:
+```bash
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user
+```
+
+### Configuration Issues
+
+Validate your configuration:
+```bash
+appswap doctor
+```
+
+## Next Steps
+
+Now that you have a basic setup working:
+
+1. **Explore Configuration**: Learn about [advanced configuration options](/configuration/overview/)
+2. **Set Up Hooks**: Add [custom scripts](/configuration/hooks/) for builds and notifications
+3. **Branch Strategies**: Configure [different strategies](/configuration/branches/) for different branches
+4. **CI/CD Integration**: Set up [automated publishing](/cicd/github-actions/) in your pipeline
+
+Need help? Check the [troubleshooting guide](/troubleshooting/) or [open an issue](https://github.com/app-swap/appswap-cli/issues)!

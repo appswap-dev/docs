@@ -1,0 +1,545 @@
+---
+title: appswap publish
+description: Publish packages to multiple destinations with branch-aware configuration.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+The `publish` command publishes your package to configured destinations based on branch-specific rules, version strategies, and authentication settings.
+
+## Usage
+
+```bash
+appswap publish [options]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--target <destinations>` | Comma-separated list of destinations | From branch config |
+| `--dry-run` | Show what would be published without publishing | `false` |
+| `--force` | Skip pre-flight checks | `false` |
+| `--skip-hooks` | Skip pre/post publish hooks | `false` |
+| `--skip-build` | Skip build command | `false` |
+| `--skip-git-checks` | Skip git working directory checks | `false` |
+
+## Supported Destinations
+
+### NPM Registries
+
+Publish to public or private NPM registries:
+
+```yaml
+destinations:
+  npm-public:
+    type: npm
+    registry: https://registry.npmjs.org
+    distTag: latest
+  npm-private:
+    type: npm
+    registry: https://npm.company.com
+    distTag: internal
+```
+
+### GitHub Releases
+
+Create GitHub releases with assets and release notes:
+
+```yaml
+destinations:
+  github:
+    type: github
+    owner: your-org
+    repo: your-repo
+    releaseNotes: true
+    config:
+      uploadAssets: true
+```
+
+### GitLab Releases
+
+Create GitLab releases (coming soon):
+
+```yaml
+destinations:
+  gitlab:
+    type: gitlab
+    project: your-project-id
+    releaseNotes: true
+```
+
+## Branch-Aware Publishing
+
+Different branches publish to different destinations with different configurations:
+
+<Tabs>
+  <TabItem label="main">
+    ```yaml
+    branches:
+      main:
+        destinations: [npm, github]
+        versionStrategy: minor
+        distTag: latest
+    ```
+    
+    ```bash
+    git checkout main
+    appswap publish
+    # → NPM: latest tag
+    # → GitHub: creates release
+    ```
+  </TabItem>
+  
+  <TabItem label="develop">
+    ```yaml
+    branches:
+      develop:
+        destinations: [npm]
+        versionStrategy: minor
+        distTag: dev
+    ```
+    
+    ```bash
+    git checkout develop
+    appswap publish
+    # → NPM: dev tag
+    # → No GitHub release
+    ```
+  </TabItem>
+  
+  <TabItem label="feature/*">
+    ```yaml
+    branches:
+      "feature/*":
+        destinations: [npm]
+        versionStrategy: branch
+        distTag: feature
+    ```
+    
+    ```bash
+    git checkout feature/awesome-feature
+    appswap publish
+    # → NPM: feature tag
+    # → Version: 1.2.3-feature-awesome-feature.0
+    ```
+  </TabItem>
+</Tabs>
+
+## Publishing Workflow
+
+1. **Pre-flight Checks**: Verify git status, authentication, and dependencies
+2. **Pre-publish Hooks**: Run custom scripts (builds, tests, etc.)
+3. **Build Command**: Execute branch-specific build (if configured)
+4. **Publish to Destinations**: Upload to each configured destination
+5. **Post-publish Hooks**: Run notification scripts, cleanup, etc.
+6. **Git Operations**: Create and push tags (if not skipped)
+
+## Examples
+
+### Basic Publishing
+
+```bash
+# Publish using branch configuration
+appswap publish
+
+# Test without publishing
+appswap publish --dry-run
+
+# Publish to specific destinations only
+appswap publish --target npm,github
+```
+
+### Force Publishing
+
+Skip checks for CI/CD environments:
+
+```bash
+# Skip git working directory checks
+appswap publish --skip-git-checks
+
+# Skip all pre-flight checks
+appswap publish --force
+
+# Skip hooks (useful for debugging)
+appswap publish --skip-hooks
+```
+
+### Development Workflows
+
+```bash
+# Quick development publish
+appswap publish --target npm --skip-build
+
+# Feature branch preview
+git checkout feature/new-ui
+appswap publish --dry-run  # Check what would happen
+appswap publish            # Publish preview version
+```
+
+## NPM Publishing
+
+### Dist Tags
+
+AppSwap CLI automatically manages NPM dist-tags based on branch configuration:
+
+```yaml
+branches:
+  main:
+    distTag: latest      # Production releases
+  develop:
+    distTag: dev         # Development releases  
+  "feature/*":
+    distTag: feature     # Feature previews
+  "hotfix/*":
+    distTag: hotfix      # Emergency patches
+```
+
+### Registry Support
+
+Publish to multiple registries:
+
+```yaml
+destinations:
+  npm-public:
+    type: npm
+    registry: https://registry.npmjs.org
+  npm-github:
+    type: npm
+    registry: https://npm.pkg.github.com
+  npm-private:
+    type: npm
+    registry: https://npm.company.com
+    private: true
+```
+
+### Authentication
+
+NPM authentication uses the `NPM_TOKEN` environment variable:
+
+```bash
+export NPM_TOKEN="npm_xxxxxxxxxxxxxxxx"
+appswap publish
+```
+
+Or configure per-registry tokens:
+
+```bash
+export NPM_PUBLIC_TOKEN="npm_public_token"
+export NPM_PRIVATE_TOKEN="npm_private_token"
+```
+
+## GitHub Releases
+
+### Release Creation
+
+Automatically creates GitHub releases with:
+
+- **Version tag** (e.g., `v1.2.3`)
+- **Release notes** (generated or custom template)
+- **Package assets** (tarball and checksums)
+- **Prerelease marking** (for versions with `-` suffix)
+
+### Release Notes
+
+AppSwap CLI can generate release notes automatically:
+
+```yaml
+destinations:
+  github:
+    type: github
+    releaseNotes: true
+    config:
+      releaseNotesTemplate: .appswap/templates/release-notes.md
+```
+
+Custom template example:
+
+```markdown
+## Changes in {version}
+
+### 🚀 Features
+- Version {version} of {name}
+
+### 📦 Installation
+```bash
+npm install -g {name}@{version}
+```
+
+### 🔗 Links
+- [NPM Package](https://www.npmjs.com/package/{name})
+- [Documentation](https://github.com/{owner}/{repo}#readme)
+```
+
+### Asset Upload
+
+Upload package assets to releases:
+
+```yaml
+destinations:
+  github:
+    type: github
+    config:
+      uploadAssets: true  # Uploads .tgz and checksums
+```
+
+### Authentication
+
+GitHub authentication uses the `GITHUB_TOKEN` environment variable:
+
+```bash
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxx"
+appswap publish
+```
+
+## Build Commands
+
+Execute different builds for different branches:
+
+```yaml
+branches:
+  main:
+    buildCommand: "npm run build:production"
+    destinations: [npm, github]
+  develop:
+    buildCommand: "npm run build:development"
+    destinations: [npm]
+  "feature/*":
+    buildCommand: "npm run build:preview"
+    destinations: [npm]
+```
+
+Skip builds when needed:
+
+```bash
+# Skip configured build command
+appswap publish --skip-build
+
+# Use different build
+npm run build:custom
+appswap publish --skip-build
+```
+
+## Hooks
+
+Run custom scripts during publishing:
+
+```yaml
+hooks:
+  prepublish:
+    - npm run test
+    - npm run lint
+    - npm run build
+  postpublish:
+    - npm run notify-team
+    - npm run update-docs
+```
+
+Available hook types:
+- `prepublish`: Before any publishing
+- `postpublish`: After successful publishing
+
+Hook environment variables:
+- `APPSWAP_VERSION`: Current version being published
+- `APPSWAP_HOOK_TYPE`: `prepublish` or `postpublish`
+
+## Output Format
+
+### Standard Output
+
+```bash
+✔ Publishing @myorg/mypackage@1.2.3 to: npm, github
+✔ Pre-flight checks passed
+✔ prepublish hooks completed
+✔ Build completed
+✔ Published @myorg/mypackage@1.2.3 to npm with tag 'latest'
+✔ Created GitHub release v1.2.3: https://github.com/myorg/mypackage/releases/tag/v1.2.3
+✔ postpublish hooks completed
+✅ Successfully published @myorg/mypackage@1.2.3!
+✔ Created and pushed git tag: v1.2.3
+```
+
+### Dry Run Output
+
+```bash
+appswap publish --dry-run
+```
+
+```bash
+✔ Publishing @myorg/mypackage@1.2.3 to: npm, github
+Dry run mode - no actual publishing will occur
+✔ Pre-flight checks passed
+✔ prepublish hooks completed
+✔ Build completed
+✔ Dry run: Would publish @myorg/mypackage@1.2.3 to npm with tag 'latest'
+✔ Dry run: Would create GitHub release for @myorg/mypackage@1.2.3
+✔ postpublish hooks completed
+✅ Dry run completed for @myorg/mypackage@1.2.3
+💡 Would create and push git tag: v1.2.3
+```
+
+## Error Handling
+
+### Authentication Errors
+
+```bash
+Error: Authentication failed for NPM registry
+  Registry: https://registry.npmjs.org
+  Status: 401 Unauthorized
+  
+Solution: Check NPM_TOKEN environment variable
+```
+
+### Git Errors
+
+```bash
+Error: Git working directory is not clean
+  Modified files: src/index.js, package.json
+  
+Solutions:
+1. Commit changes: git add . && git commit -m "changes"
+2. Skip check: appswap publish --skip-git-checks
+3. Force publish: appswap publish --force
+```
+
+### Build Errors
+
+```bash
+Error: Build command failed
+  Command: npm run build:production
+  Exit code: 1
+  
+Solutions:
+1. Fix build issues
+2. Skip build: appswap publish --skip-build
+3. Use different build: npm run build && appswap publish --skip-build
+```
+
+### Destination Errors
+
+```bash
+Error: Destination 'npm-private' not configured
+  Available destinations: npm, github
+  
+Solution: Add destination to .appswap/publish.yaml or use --target
+```
+
+## Advanced Usage
+
+### Multi-Package Publishing
+
+For monorepos, publish packages independently:
+
+```bash
+cd packages/package-a
+appswap publish
+
+cd ../package-b
+appswap publish --target npm  # Skip GitHub release for this package
+```
+
+### Conditional Publishing
+
+Use environment variables to control publishing:
+
+```bash
+# Only publish on CI
+if [ "$CI" = "true" ]; then
+  appswap publish
+else
+  appswap publish --dry-run
+fi
+
+# Different targets based on branch
+if [ "$BRANCH" = "main" ]; then
+  appswap publish --target npm,github
+else
+  appswap publish --target npm
+fi
+```
+
+### Custom Dist Tag Logic
+
+Override dist-tag calculation:
+
+```yaml
+branches:
+  main:
+    distTag: latest
+  develop:
+    distTag: dev
+  "feature/*":
+    distTag: "{branch}"  # feature-awesome-feature
+  "release/*":
+    distTag: rc
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+- name: Publish
+  run: appswap publish --skip-git-checks
+  env:
+    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### GitLab CI
+
+```yaml
+publish:
+  script:
+    - appswap publish --skip-git-checks
+  variables:
+    NPM_TOKEN: $NPM_TOKEN
+    GITHUB_TOKEN: $GITHUB_TOKEN
+```
+
+## Troubleshooting
+
+### Debug Publishing Issues
+
+```bash
+# Check configuration
+appswap doctor
+
+# Test with dry run
+appswap publish --dry-run --target npm
+
+# Verbose output
+APPSWAP_DEBUG=true appswap publish --dry-run
+```
+
+### Registry Issues
+
+```bash
+# Test registry connectivity
+npm ping --registry https://registry.npmjs.org
+
+# Check published versions
+appswap status
+
+# Test authentication
+npm whoami --registry https://registry.npmjs.org
+```
+
+### Hook Failures
+
+```bash
+# Skip hooks for debugging
+appswap publish --skip-hooks
+
+# Run hooks manually
+npm run test
+npm run build
+appswap publish --skip-hooks
+```
+
+## See Also
+
+- [`appswap version`](/commands/version/) - Calculate and update versions
+- [`appswap status`](/commands/status/) - Check published versions
+- [Publishing Configuration](/configuration/publishing/) - Configure destinations and branches
+- [CI/CD Integration](/cicd/github-actions/) - Automate publishing in CI/CD

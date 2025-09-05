@@ -1,0 +1,77 @@
+---
+title: Welcome to AppSwap CLI
+description: A comprehensive CLI tool for CI/CD pipelines to manage versioning and publishing across multiple platforms.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+AppSwap CLI is a powerful, flexible command-line tool designed to streamline your CI/CD pipelines by automating versioning, publishing, and release management across multiple platforms and registries.
+
+## Why AppSwap CLI?
+
+<CardGrid>
+  <Card title="🚀 Automated Versioning" icon="rocket">
+    Intelligent version calculation based on branch strategies, semantic versioning, or calendar versioning.
+  </Card>
+  <Card title="📦 Multi-Platform Publishing" icon="open-book">
+    Publish to NPM, GitHub Releases, GitLab Releases, and custom destinations with a single command.
+  </Card>
+  <Card title="🌿 Branch-Aware" icon="setting">
+    Different strategies for different branches - automatic dist-tags, prerelease versions, and more.
+  </Card>
+  <Card title="🔧 Highly Configurable" icon="puzzle">
+    YAML-based configuration with support for hooks, custom build commands, and flexible destination mapping.
+  </Card>
+</CardGrid>
+
+## Key Features
+
+- **Intelligent Version Management**: Supports major, minor, patch, prerelease, branch-based, and calendar versioning strategies
+- **Multi-Registry Support**: Publish to multiple NPM registries, GitHub Releases, and GitLab Releases
+- **Branch-Specific Configuration**: Different publishing strategies for main, develop, feature, and hotfix branches
+- **Git Integration**: Automatic tag creation, commit verification, and push operations
+- **CI/CD Ready**: Works seamlessly with GitHub Actions, GitLab CI, Jenkins, and other CI/CD platforms
+- **Extensible Hooks**: Pre/post publish and version hooks for custom automation
+- **Dry Run Mode**: Test your configuration without making actual changes
+
+## Quick Start
+
+Get started with AppSwap CLI in just a few steps:
+
+1. **Install the CLI**
+   ```bash
+   npm install -g @appswap/cli
+   ```
+
+2. **Initialize your project**
+   ```bash
+   appswap init
+   ```
+
+3. **Configure your publishing strategy**
+   ```bash
+   # Edit .appswap/publish.yaml
+   # Edit .appswap/version.yaml
+   ```
+
+4. **Publish your package**
+   ```bash
+   appswap publish
+   ```
+
+## What's Next?
+
+- [Installation Guide](./installation/) - Detailed installation instructions
+- [Quick Start Tutorial](./quick-start/) - Step-by-step setup guide
+- [Configuration Overview](./configuration/overview/) - Learn about configuration options
+- [GitHub Actions Integration](./cicd/github-actions/) - Set up automated publishing
+
+## Community & Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/app-swap/appswap-cli/issues)
+- **Discussions**: [Join the community discussion](https://github.com/app-swap/appswap-cli/discussions)
+- **NPM Package**: [@appswap/cli](https://www.npmjs.com/package/@appswap/cli)
+
+---
+
+Ready to streamline your publishing workflow? Let's get started! 🚀

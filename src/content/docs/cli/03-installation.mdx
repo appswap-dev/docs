@@ -1,0 +1,238 @@
+---
+title: Installation
+description: How to install AppSwap CLI on your system.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+AppSwap CLI can be installed in several ways depending on your needs and environment.
+
+## Global Installation
+
+The recommended way to install AppSwap CLI is globally via npm:
+
+<Tabs>
+  <TabItem label="npm">
+    ```bash
+    npm install -g @appswap/cli
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn global add @appswap/cli
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add -g @appswap/cli
+    ```
+  </TabItem>
+</Tabs>
+
+After installation, verify it's working:
+
+```bash
+appswap --version
+appswap --help
+```
+
+## Project-Specific Installation
+
+You can also install AppSwap CLI as a development dependency in your project:
+
+<Tabs>
+  <TabItem label="npm">
+    ```bash
+    npm install --save-dev @appswap/cli
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add --dev @appswap/cli
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add -D @appswap/cli
+    ```
+  </TabItem>
+</Tabs>
+
+Then add scripts to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "version": "appswap version",
+    "publish": "appswap publish",
+    "publish:dry": "appswap publish --dry-run"
+  }
+}
+```
+
+## Using npx
+
+You can run AppSwap CLI without installing it using npx:
+
+```bash
+npx @appswap/cli --version
+npx @appswap/cli init
+npx @appswap/cli publish --dry-run
+```
+
+This is useful for trying out the tool or for occasional use.
+
+## CI/CD Installation
+
+### GitHub Actions
+
+```yaml
+- name: Setup Node.js
+  uses: actions/setup-node@v4
+  with:
+    node-version: '20.x'
+    registry-url: 'https://registry.npmjs.org'
+
+- name: Install AppSwap CLI
+  run: npm install -g @appswap/cli
+
+- name: Publish
+  run: appswap publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### GitLab CI
+
+```yaml
+publish:
+  image: node:20
+  script:
+    - npm install -g @appswap/cli
+    - appswap publish
+  variables:
+    NODE_AUTH_TOKEN: $NPM_TOKEN
+    GITHUB_TOKEN: $GITHUB_TOKEN
+```
+
+### Docker
+
+```dockerfile
+FROM node:20-alpine
+
+# Install AppSwap CLI globally
+RUN npm install -g @appswap/cli
+
+# Your application code
+WORKDIR /app
+COPY . .
+
+# Install dependencies
+RUN npm ci
+
+# Use AppSwap CLI in your build process
+RUN appswap publish --dry-run
+```
+
+## Requirements
+
+### System Requirements
+
+- **Node.js**: Version 18.0.0 or higher
+- **npm**: Version 8.0.0 or higher (comes with Node.js)
+- **Git**: Required for version tagging and repository operations
+
+### Supported Platforms
+
+- ✅ **macOS** (Intel and Apple Silicon)
+- ✅ **Linux** (Ubuntu, Debian, CentOS, Alpine)
+- ✅ **Windows** (Windows 10/11, WSL)
+- ✅ **CI/CD Environments** (GitHub Actions, GitLab CI, Jenkins, etc.)
+
+## Verification
+
+After installation, verify that AppSwap CLI is working correctly:
+
+```bash
+# Check version
+appswap --version
+
+# Check available commands
+appswap --help
+
+# Test with a dry run (safe to run anywhere)
+appswap doctor
+```
+
+The `doctor` command will check your environment and highlight any potential issues.
+
+## Troubleshooting
+
+### Permission Issues (macOS/Linux)
+
+If you get permission errors during global installation:
+
+```bash
+# Option 1: Use sudo (not recommended)
+sudo npm install -g @appswap/cli
+
+# Option 2: Configure npm to use a different directory (recommended)
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+npm install -g @appswap/cli
+```
+
+### Node.js Version Issues
+
+Check your Node.js version:
+
+```bash
+node --version
+```
+
+If you need to upgrade Node.js:
+
+- **Using Node Version Manager (nvm)**:
+  ```bash
+  nvm install 20
+  nvm use 20
+  ```
+
+- **Direct download**: Visit [nodejs.org](https://nodejs.org/)
+
+### Windows Issues
+
+On Windows, you might need to:
+
+1. **Run as Administrator** when installing globally
+2. **Use PowerShell** instead of Command Prompt
+3. **Configure execution policy** if needed:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+### Network Issues
+
+If you're behind a corporate firewall:
+
+```bash
+# Configure npm proxy
+npm config set proxy http://proxy.company.com:8080
+npm config set https-proxy http://proxy.company.com:8080
+
+# Or use registry mirrors
+npm config set registry https://registry.npmmirror.com/
+```
+
+## Next Steps
+
+Once you have AppSwap CLI installed:
+
+1. [Initialize your first project](/quick-start/)
+2. [Learn about configuration](/configuration/overview/)
+3. [Set up CI/CD integration](/cicd/github-actions/)
+
+Need help? Check out our [troubleshooting guide](/troubleshooting/) or [open an issue](https://github.com/app-swap/appswap-cli/issues).

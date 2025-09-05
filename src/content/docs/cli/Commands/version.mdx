@@ -1,0 +1,338 @@
+---
+title: appswap version
+description: Calculate and update package versions automatically.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+The `version` command calculates and applies version updates based on your configuration, published versions, and versioning strategy.
+
+## Usage
+
+```bash
+appswap version [options]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--strategy <strategy>` | Override version strategy | From config |
+| `--dry-run` | Show what would happen without making changes | `false` |
+| `--message <message>` | Custom commit message | `"Release {version}"` |
+| `--no-tag` | Skip creating git tag | `false` |
+
+## Version Strategies
+
+### Semantic Versioning
+
+<Tabs>
+  <TabItem label="major">
+    ```bash
+    appswap version --strategy major
+    # 1.2.3 → 2.0.0
+    ```
+  </TabItem>
+  <TabItem label="minor">
+    ```bash
+    appswap version --strategy minor
+    # 1.2.3 → 1.3.0
+    ```
+  </TabItem>
+  <TabItem label="patch">
+    ```bash
+    appswap version --strategy patch
+    # 1.2.3 → 1.2.4
+    ```
+  </TabItem>
+</Tabs>
+
+### Prerelease Versioning
+
+```bash
+appswap version --strategy prerelease
+# 1.2.3 → 1.2.4-alpha.0
+# 1.2.4-alpha.0 → 1.2.4-alpha.1
+```
+
+### Branch-Based Versioning
+
+Includes branch name in the version:
+
+```bash
+git checkout feature/awesome-feature
+appswap version --strategy branch
+# 1.2.3 → 1.2.4-feature-awesome-feature.0
+```
+
+### Calendar Versioning
+
+Uses current date:
+
+```bash
+appswap version --strategy calendar
+# Generates: 2024.03.15 or 2024.03.15.1
+```
+
+## How Version Calculation Works
+
+1. **Fetch Published Versions**: Checks NPM registries (respects configuration)
+2. **Determine Strategy**: Uses command option, branch config, or default
+3. **Calculate Next Version**: Applies strategy to find next available version
+4. **Update Files**: Modifies `package.json` and other version files
+5. **Create Git Commit**: Commits changes with specified message
+6. **Create Git Tag**: Tags the commit (unless `--no-tag`)
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Use default strategy from configuration
+appswap version
+
+# Specify strategy explicitly
+appswap version --strategy patch
+
+# Test without making changes
+appswap version --dry-run
+```
+
+### Custom Messages
+
+```bash
+# Simple message
+appswap version --message "Release v1.2.3"
+
+# Multi-line message
+appswap version --message "Release v1.2.3
+
+- Add new feature
+- Fix critical bug
+- Update dependencies"
+```
+
+### Branch-Specific Workflows
+
+```bash
+# Main branch - production release
+git checkout main
+appswap version --strategy minor
+# Creates: 1.3.0
+
+# Feature branch - preview release
+git checkout feature/new-ui
+appswap version --strategy branch
+# Creates: 1.3.1-feature-new-ui.0
+
+# Hotfix branch - patch release
+git checkout hotfix/security-fix
+appswap version --strategy patch
+# Creates: 1.3.1
+```
+
+## Registry Awareness
+
+The version command respects your configured NPM registries when checking published versions:
+
+```yaml
+# .appswap/publish.yaml
+destinations:
+  npm:
+    type: npm
+    registry: https://npm.company.com  # Checks this registry
+```
+
+This ensures version calculation considers packages published to private registries.
+
+## Output Format
+
+### Standard Output
+
+```bash
+✔ Version calculated: 1.2.3 → 1.3.0
+Dry run mode - no changes will be made
+Would update package.json version to 1.3.0
+Would create git tag: v1.3.0
+
+Published versions found:
+  1.2.3
+  1.2.2
+  1.2.1
+  ... and 5 more
+```
+
+### JSON Output
+
+```bash
+appswap version --dry-run --json
+```
+
+```json
+{
+  "currentVersion": "1.2.3",
+  "nextVersion": "1.3.0",
+  "strategy": "minor",
+  "publishedVersions": ["1.2.3", "1.2.2", "1.2.1"],
+  "dryRun": true
+}
+```
+
+## Configuration
+
+The version command uses these configuration files:
+
+### `.appswap/version.yaml`
+
+```yaml
+defaultStrategy: minor
+tagPrefix: v
+changelog:
+  enabled: true
+  format: conventional
+  file: CHANGELOG.md
+```
+
+### `.appswap/publish.yaml`
+
+```yaml
+branches:
+  main:
+    versionStrategy: minor
+  develop:
+    versionStrategy: minor
+  "feature/*":
+    versionStrategy: branch
+  "hotfix/*":
+    versionStrategy: patch
+```
+
+## Integration with Publish
+
+Version and publish work together seamlessly:
+
+```bash
+# Create version and publish in one go
+appswap version --message "Release v1.3.0"
+appswap publish
+
+# Or use the combined workflow
+appswap version && appswap publish
+```
+
+## Error Handling
+
+### Common Errors
+
+**Git working directory not clean**
+```bash
+Error: Git working directory is not clean
+  Modified files: src/index.js
+  
+Solution: Commit or stash changes before versioning
+```
+
+**No published versions found**
+```bash
+Warning: No published versions found, using 0.1.0 as base
+✔ Version calculated: none → 0.1.0
+```
+
+**Authentication issues**
+```bash
+Error: Failed to fetch published versions
+  Registry: https://npm.company.com
+  Status: 401 Unauthorized
+  
+Solution: Check NPM_TOKEN environment variable
+```
+
+## Advanced Usage
+
+### Monorepo Versioning
+
+For monorepos, run from each package directory:
+
+```bash
+cd packages/package-a
+appswap version --strategy patch
+
+cd ../package-b  
+appswap version --strategy minor
+```
+
+### Pre-release Workflows
+
+Create alpha, beta, and RC versions:
+
+```bash
+# Alpha releases
+appswap version --strategy prerelease
+# 1.0.0 → 1.0.1-alpha.0
+
+# Beta releases (after alpha testing)
+appswap version --strategy prerelease --prerelease-id beta
+# 1.0.1-alpha.5 → 1.0.1-beta.0
+
+# Release candidate
+appswap version --strategy prerelease --prerelease-id rc
+# 1.0.1-beta.3 → 1.0.1-rc.0
+
+# Final release
+appswap version --strategy patch
+# 1.0.1-rc.2 → 1.0.1
+```
+
+### Custom Version Files
+
+Update additional files beyond `package.json`:
+
+```yaml
+# .appswap/version.yaml
+files:
+  - package.json
+  - src/version.ts
+  - docs/version.md
+```
+
+## Troubleshooting
+
+### Version Conflicts
+
+If the calculated version already exists:
+
+```bash
+Error: Version 1.3.0 already published
+  Registry: https://registry.npmjs.org
+  Published: 2024-03-15T10:30:00Z
+
+# Solutions:
+appswap version --strategy minor  # Try next minor: 1.4.0
+appswap version --strategy patch  # Try next patch: 1.3.1
+```
+
+### Branch Strategy Issues
+
+```bash
+# Check what strategy would be used
+appswap version --dry-run
+
+# Override for testing
+appswap version --strategy patch --dry-run
+```
+
+### Registry Connection Issues
+
+```bash
+# Test registry connectivity
+npm ping --registry https://registry.npmjs.org
+
+# Check authentication
+npm whoami --registry https://registry.npmjs.org
+```
+
+## See Also
+
+- [`appswap publish`](/commands/publish/) - Publish packages to destinations
+- [`appswap status`](/commands/status/) - Check published versions
+- [Version Configuration](/configuration/versioning/) - Configure version strategies

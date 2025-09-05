@@ -1,0 +1,565 @@
+---
+title: GitHub Actions Integration
+description: Automate your publishing workflow with GitHub Actions and AppSwap CLI.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+AppSwap CLI is designed to work seamlessly with GitHub Actions, providing automated versioning and publishing for your packages.
+
+## Basic Workflow
+
+Here's a complete GitHub Actions workflow that uses AppSwap CLI:
+
+```yaml
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        registry-url: 'https://registry.npmjs.org'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Run tests
+      run: |
+        pnpm lint
+        pnpm test
+        pnpm build
+        
+    - name: Install AppSwap CLI
+      run: pnpm add -g @appswap/cli
+        
+    - name: Bump version and create tag
+      id: version
+      run: |
+        NEW_VERSION=$(node_modules/.bin/appswap version --dry-run 2>&1 | grep "→" | sed 's/.*→ \([^ ]*\).*/\1/')
+        node_modules/.bin/appswap version --message "Release $NEW_VERSION"
+
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "tag_name=v$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+    - name: Push tags
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git push origin --tags
+        
+    - name: Build for release
+      run: pnpm build
+      
+    - name: Publish using AppSwap CLI
+      run: node_modules/.bin/appswap publish --skip-git-checks
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Post-release notification
+      run: |
+        echo "🎉 Successfully released ${{ steps.version.outputs.tag_name }}"
+        echo "📦 Published to NPM: https://www.npmjs.com/package/@your-org/your-package"
+        echo "🐙 GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag_name }}"
+```
+
+## Workflow Variations
+
+### Simple Workflow
+
+For straightforward projects, use this minimal workflow:
+
+<Tabs>
+  <TabItem label="npm">
+    ```yaml
+    name: Publish
+    
+    on:
+      push:
+        branches: [main]
+    
+    jobs:
+      publish:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20.x'
+          
+          - run: npm ci
+          - run: npm test
+          - run: npm install -g @appswap/cli
+          
+          - name: Version and Publish
+            run: |
+              appswap version --message "Automated release"
+              appswap publish --skip-git-checks
+            env:
+              NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    ```
+  </TabItem>
+  
+  <TabItem label="pnpm">
+    ```yaml
+    name: Publish
+    
+    on:
+      push:
+        branches: [main]
+    
+    jobs:
+      publish:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20.x'
+          - uses: pnpm/action-setup@v4
+          
+          - run: pnpm install
+          - run: pnpm test
+          - run: pnpm add -g @appswap/cli
+          
+          - name: Version and Publish
+            run: |
+              appswap version --message "Automated release"
+              appswap publish --skip-git-checks
+            env:
+              NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    ```
+  </TabItem>
+  
+  <TabItem label="yarn">
+    ```yaml
+    name: Publish
+    
+    on:
+      push:
+        branches: [main]
+    
+    jobs:
+      publish:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: '20.x'
+          
+          - run: yarn install --frozen-lockfile
+          - run: yarn test
+          - run: yarn global add @appswap/cli
+          
+          - name: Version and Publish
+            run: |
+              appswap version --message "Automated release"
+              appswap publish --skip-git-checks
+            env:
+              NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    ```
+  </TabItem>
+</Tabs>
+
+### Multi-Branch Workflow
+
+Support different publishing strategies for different branches:
+
+```yaml
+name: Publish
+
+on:
+  push:
+    branches:
+      - main        # Production releases
+      - develop     # Development releases  
+      - 'feature/*' # Feature previews
+      - 'hotfix/*'  # Emergency patches
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Install AppSwap CLI
+      run: npm install -g @appswap/cli
+      
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Action"
+        git config user.email "action@github.com"
+        
+    - name: Version and Publish
+      run: |
+        appswap version --message "Automated release from ${{ github.ref_name }}"
+        appswap publish --skip-git-checks
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Manual Trigger Workflow
+
+Allow manual releases with custom inputs:
+
+```yaml
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_strategy:
+        description: 'Version strategy'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - prerelease
+      targets:
+        description: 'Publishing targets (comma-separated)'
+        required: false
+        default: 'npm,github'
+      dry_run:
+        description: 'Dry run (test only)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - run: npm ci
+    - run: npm test
+    - run: npm install -g @appswap/cli
+    
+    - name: Configure Git
+      if: ${{ !inputs.dry_run }}
+      run: |
+        git config user.name "GitHub Action"
+        git config user.email "action@github.com"
+    
+    - name: Version and Publish
+      run: |
+        if [ "${{ inputs.dry_run }}" = "true" ]; then
+          appswap version --strategy ${{ inputs.version_strategy }} --dry-run
+          appswap publish --target ${{ inputs.targets }} --dry-run
+        else
+          appswap version --strategy ${{ inputs.version_strategy }} --message "Manual release"
+          appswap publish --target ${{ inputs.targets }} --skip-git-checks
+        fi
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Required Secrets
+
+Configure these secrets in your repository settings:
+
+### NPM_TOKEN
+
+1. **Generate NPM token**:
+   ```bash
+   npm login
+   npm token create --type automation
+   ```
+
+2. **Add to GitHub Secrets**:
+   - Go to repository Settings → Secrets → Actions
+   - Add `NPM_TOKEN` with your token value
+
+### GITHUB_TOKEN
+
+The `GITHUB_TOKEN` is automatically provided by GitHub Actions. Ensure your workflow has the necessary permissions:
+
+```yaml
+permissions:
+  contents: write    # For creating releases and pushing tags
+  packages: write    # For publishing to GitHub Packages (if needed)
+```
+
+For GitHub Releases, you might need a Personal Access Token with broader permissions:
+
+1. **Generate PAT**: GitHub Settings → Developer settings → Personal access tokens
+2. **Add to Secrets**: Repository Settings → Secrets → `GITHUB_TOKEN`
+
+## Environment Configuration
+
+### Default Environment Variables
+
+AppSwap CLI automatically uses these environment variables in GitHub Actions:
+
+```yaml
+env:
+  CI: true                          # Detected automatically
+  GITHUB_ACTIONS: true             # Detected automatically  
+  GITHUB_REPOSITORY: ${{ github.repository }}
+  GITHUB_REF: ${{ github.ref }}
+  GITHUB_SHA: ${{ github.sha }}
+```
+
+### Custom Environment Variables
+
+Override behavior with custom environment:
+
+```yaml
+env:
+  APPSWAP_DEFAULT_STRATEGY: minor
+  APPSWAP_DRY_RUN: false
+  APPSWAP_SKIP_GIT_CHECKS: true
+  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Conditional Publishing
+
+### Branch-Based Conditions
+
+```yaml
+- name: Publish to Production
+  if: github.ref == 'refs/heads/main'
+  run: appswap publish --target npm,github
+  
+- name: Publish Development
+  if: github.ref == 'refs/heads/develop'  
+  run: appswap publish --target npm
+```
+
+### Tag-Based Releases
+
+Trigger releases only on version tags:
+
+```yaml
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+      - run: npm install -g @appswap/cli
+      
+      - name: Publish Release
+        run: appswap publish --skip-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Pull Request Previews
+
+Create preview releases for pull requests:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+      - run: npm install -g @appswap/cli
+      
+      - name: Create Preview Release
+        run: |
+          appswap version --strategy branch --dry-run
+          appswap publish --target npm --dry-run
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+## Monorepo Support
+
+### Matrix Strategy
+
+Publish multiple packages in parallel:
+
+```yaml
+strategy:
+  matrix:
+    package:
+      - packages/package-a
+      - packages/package-b  
+      - packages/package-c
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: actions/setup-node@v4
+  - run: npm ci
+  - run: npm install -g @appswap/cli
+  
+  - name: Publish Package
+    working-directory: ${{ matrix.package }}
+    run: |
+      appswap version --message "Release ${{ matrix.package }}"
+      appswap publish --skip-git-checks
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Sequential Publishing
+
+Publish packages in order (for dependencies):
+
+```yaml
+- name: Publish Core Package
+  working-directory: packages/core
+  run: |
+    appswap version --message "Release core"
+    appswap publish --skip-git-checks
+    
+- name: Publish Plugin Package
+  working-directory: packages/plugin
+  run: |
+    appswap version --message "Release plugin"  
+    appswap publish --skip-git-checks
+```
+
+## Caching and Performance
+
+### Cache Dependencies
+
+```yaml
+- name: Cache Node modules
+  uses: actions/cache@v3
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+```
+
+### Cache AppSwap CLI
+
+```yaml
+- name: Cache AppSwap CLI
+  uses: actions/cache@v3
+  with:
+    path: ~/.npm/_npx
+    key: appswap-cli-${{ hashFiles('package.json') }}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Permission denied errors**:
+```yaml
+- name: Configure Git
+  run: |
+    git config --global user.email "action@github.com"
+    git config --global user.name "GitHub Action"
+```
+
+**Tag already exists**:
+```yaml
+- name: Delete existing tag
+  run: |
+    git tag -d v1.0.0 || true
+    git push origin :refs/tags/v1.0.0 || true
+  continue-on-error: true
+```
+
+**NPM authentication**:
+```yaml
+- name: Setup .npmrc
+  run: |
+    echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+```
+
+### Debug Mode
+
+Enable debug output:
+
+```yaml
+- name: Debug AppSwap CLI
+  run: |
+    appswap doctor
+    appswap version --dry-run
+    appswap publish --dry-run
+  env:
+    DEBUG: appswap:*
+    APPSWAP_DEBUG: true
+```
+
+## Best Practices
+
+1. **Use fetch-depth: 0** for proper git history access
+2. **Configure git user** before version operations
+3. **Use --skip-git-checks** in CI environments
+4. **Cache dependencies** for faster builds
+5. **Use dry-run** for testing workflow changes
+6. **Set up proper permissions** for token access
+7. **Use matrix strategy** for monorepos
+8. **Add status checks** to protect important branches
+
+## Examples Repository
+
+Check out our [examples repository](https://github.com/app-swap/appswap-cli-examples) for complete working examples of GitHub Actions integration.

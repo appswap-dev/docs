@@ -1,0 +1,98 @@
+---
+title: Introduction
+description: Learn about AppSwap CLI and how it can streamline your CI/CD pipelines.
+---
+
+AppSwap CLI is a comprehensive command-line tool designed to solve the complexities of modern software publishing workflows. Whether you're maintaining a single package or managing a complex monorepo with multiple publishing targets, AppSwap CLI provides the automation and flexibility you need.
+
+## The Problem
+
+Modern software development involves complex publishing workflows:
+
+- **Multiple Environments**: Different branches need different publishing strategies
+- **Multiple Registries**: Publishing to NPM, private registries, GitHub Releases, etc.
+- **Version Management**: Coordinating versions across platforms and branches
+- **CI/CD Integration**: Automating releases without compromising on control
+- **Branch Strategies**: Different rules for main, develop, feature, and hotfix branches
+
+## The Solution
+
+AppSwap CLI addresses these challenges with:
+
+### 🎯 **Unified Configuration**
+Single YAML configuration files that define your entire publishing strategy, from version calculation to destination mapping.
+
+### 🌿 **Branch-Aware Publishing**
+Different strategies for different branches:
+- `main` → Production releases with GitHub Releases
+- `develop` → Development releases with `dev` tag
+- `feature/*` → Feature previews with branch-specific tags
+- `hotfix/*` → Emergency patches with `hotfix` tag
+
+### 📦 **Multi-Platform Support**
+Built-in support for:
+- **NPM Registries** (public, private, enterprise)
+- **GitHub Releases** (with assets and release notes)
+- **GitLab Releases** (coming soon)
+- **Custom Destinations** (extensible architecture)
+
+### 🔄 **Intelligent Versioning**
+Multiple versioning strategies:
+- **Semantic**: major.minor.patch increments
+- **Prerelease**: alpha, beta, rc versions
+- **Branch-based**: Include branch name in version
+- **Calendar**: Date-based versioning (YYYY.MM.DD)
+
+### 🎣 **Lifecycle Hooks**
+Execute custom scripts at key points:
+- Pre/post version hooks
+- Pre/post publish hooks
+- Custom build commands per branch
+
+## Core Concepts
+
+### Destinations
+Publishing targets like NPM registries or GitHub Releases. Each destination has its own configuration for authentication, settings, and behavior.
+
+### Branch Configurations
+Rules that define which destinations to use, what versioning strategy to apply, and what build commands to run for specific branches or branch patterns.
+
+### Version Strategies
+Algorithms for calculating the next version number based on current state, published versions, and branch context.
+
+### Hooks
+Custom scripts that run at specific points in the publishing lifecycle, allowing for custom validation, building, or notification logic.
+
+## Use Cases
+
+### 📚 **Library Maintainers**
+- Automatic semantic versioning
+- GitHub Releases with changelog
+- Multiple dist-tags for different stability levels
+
+### 🏢 **Enterprise Teams**
+- Private registry publishing
+- Branch-specific environments
+- Compliance and approval workflows
+
+### 🚀 **Open Source Projects**
+- Automated releases from CI/CD
+- Community-friendly release notes
+- Multiple package distribution channels
+
+### 🔄 **Monorepo Management**
+- Coordinated multi-package releases
+- Shared configuration across packages
+- Dependency-aware publishing
+
+## Philosophy
+
+AppSwap CLI is built on several key principles:
+
+1. **Configuration over Convention**: While we provide sensible defaults, everything should be configurable
+2. **Composability**: Small, focused commands that work well together
+3. **Transparency**: Always show what would happen before doing it (dry-run mode)
+4. **Extensibility**: Plugin-like architecture for custom destinations and hooks
+5. **CI/CD First**: Designed from the ground up for automated environments
+
+Ready to get started? Let's [install AppSwap CLI](/installation/) and set up your first project!
