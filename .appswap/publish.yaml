@@ -8,6 +8,7 @@ branches:
     destinations:
       - npm
     versionStrategy: branch
+    distTag: feature # Publish to 'feature' tag for feature branches
   hotfix/*:
     destinations:
       - npm

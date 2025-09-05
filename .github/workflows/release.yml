@@ -38,7 +38,8 @@ jobs:
           pnpm build
 
       - name: Publish
-        run: npx @appswap/cli publish
+        run: |
+          npm config set //npm.appswap.dev/:_authToken=${{ secrets.NPM_APPSWAP_DEV_TOKEN }}
+          npx @appswap/cli publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_APPSWAP_DEV_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
