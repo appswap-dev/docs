@@ -16,7 +16,7 @@ branches:
 destinations:
   npm:
     type: npm
-    registry: https://registry.npmjs.org
+    registry: https://npm.appswap.dev/
   github:
     type: github
     releaseNotes: true
