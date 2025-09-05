@@ -30,7 +30,7 @@ jobs:
 
       - name: Calculate version
         uses: app-swap/action-version@v1
-        with:
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
