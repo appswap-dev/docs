@@ -21,6 +21,7 @@ destinations:
   github:
     type: github
     releaseNotes: true
+    assetName: "appswap-docs"
 hooks:
   prepublish:
     - npm run build
