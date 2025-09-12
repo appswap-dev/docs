@@ -1,0 +1,6 @@
+/* Custom styles for AppSwap docs */
+
+/* For light theme specifically, add a shadow */
+:root[data-theme="light"] .site-title img {
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+}

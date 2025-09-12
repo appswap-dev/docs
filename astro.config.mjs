@@ -7,6 +7,12 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'AppSwap',
+			logo: {
+				src: './public/favicon.svg',
+			},
+			customCss: [
+				'./src/styles/custom.css',
+			],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/app-swap/docs' }],
 			sidebar: [
 				{
