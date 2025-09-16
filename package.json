@@ -4,7 +4,7 @@
   "version": "0.0.19",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/app-swap/docs.git"
+    "url": "git+https://github.com/appswap-dev/docs.git"
   },
   "files": [
     "dist",
@@ -26,5 +26,8 @@
   "appswap": {
     "servePath": "dist"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.14.0",
+  "devDependencies": {
+    "get-port": "^7.1.0"
+  }
 }
