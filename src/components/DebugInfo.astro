@@ -1,0 +1,116 @@
+---
+// DebugInfo.astro
+---
+
+<div class="debug-info">
+  <div class="debug-section">
+    <h3>🌍 Locale Information</h3>
+    <div class="debug-item">
+      <strong>Browser Locale:</strong> <span id="browser-locale"></span>
+    </div>
+    <div class="debug-item">
+      <strong>Language:</strong> <span id="language"></span>
+    </div>
+    <div class="debug-item">
+      <strong>Languages:</strong> <span id="languages"></span>
+    </div>
+  </div>
+
+  <div class="debug-section">
+    <h3>🕒 Timezone Information</h3>
+    <div class="debug-item">
+      <strong>Timezone:</strong> <span id="timezone"></span>
+    </div>
+    <div class="debug-item">
+      <strong>UTC Offset:</strong> <span id="utc-offset"></span>
+    </div>
+  </div>
+
+  <div class="debug-section">
+    <h3>⏰ Current DateTime</h3>
+    <div class="debug-item">
+      <strong>Local Time:</strong> <span id="local-time"></span>
+    </div>
+    <div class="debug-item">
+      <strong>UTC Time:</strong> <span id="utc-time"></span>
+    </div>
+    <div class="debug-item">
+      <strong>Unix Timestamp:</strong> <span id="unix-timestamp"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .debug-info {
+    font-family: monospace;
+    background: var(--sl-color-bg-nav);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .debug-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .debug-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .debug-section h3 {
+    margin: 0 0 0.75rem 0;
+    color: var(--sl-color-white);
+    font-size: 1.1em;
+  }
+
+  .debug-item {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+  }
+
+  .debug-item strong {
+    color: var(--sl-color-text-accent);
+    min-width: 140px;
+    display: inline-block;
+  }
+
+  .debug-item span {
+    color: var(--sl-color-white);
+    background: var(--sl-color-gray-6);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  function updateDebugInfo() {
+    const now = new Date();
+
+    // Locale Information
+    document.getElementById('browser-locale')!.textContent = Intl.DateTimeFormat().resolvedOptions().locale;
+    document.getElementById('language')!.textContent = navigator.language;
+    document.getElementById('languages')!.textContent = navigator.languages.join(', ');
+
+    // Timezone Information
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.getElementById('timezone')!.textContent = timezone;
+
+    const utcOffset = -now.getTimezoneOffset() / 60;
+    const offsetSign = utcOffset >= 0 ? '+' : '-';
+    const offsetHours = Math.abs(utcOffset).toString().padStart(2, '0');
+    document.getElementById('utc-offset')!.textContent = `${offsetSign}${offsetHours}:00`;
+
+    // DateTime Information
+    document.getElementById('local-time')!.textContent = now.toLocaleString();
+    document.getElementById('utc-time')!.textContent = now.toUTCString();
+    document.getElementById('unix-timestamp')!.textContent = Math.floor(now.getTime() / 1000).toString();
+  }
+
+  // Update immediately
+  updateDebugInfo();
+
+  // Update every second
+  setInterval(updateDebugInfo, 1000);
+</script>

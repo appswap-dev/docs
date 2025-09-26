@@ -44,6 +44,10 @@ export default defineConfig({
           label: "Reference",
           autogenerate: { directory: "reference" },
         },
+        {
+          label: "Debug",
+          slug: "debug",
+        },
       ],
     }),
   ],
