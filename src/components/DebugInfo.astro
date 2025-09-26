@@ -85,32 +85,60 @@
 </style>
 
 <script>
+  let animationId: number;
+  let lastUpdate = 0;
+
   function updateDebugInfo() {
     const now = new Date();
 
-    // Locale Information
-    document.getElementById('browser-locale')!.textContent = Intl.DateTimeFormat().resolvedOptions().locale;
-    document.getElementById('language')!.textContent = navigator.language;
-    document.getElementById('languages')!.textContent = navigator.languages.join(', ');
+    // Locale Information (only update once)
+    if (!lastUpdate) {
+      document.getElementById('browser-locale')!.textContent = Intl.DateTimeFormat().resolvedOptions().locale;
+      document.getElementById('language')!.textContent = navigator.language;
+      document.getElementById('languages')!.textContent = navigator.languages.join(', ');
 
-    // Timezone Information
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    document.getElementById('timezone')!.textContent = timezone;
+      // Timezone Information (only update once)
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      document.getElementById('timezone')!.textContent = timezone;
 
-    const utcOffset = -now.getTimezoneOffset() / 60;
-    const offsetSign = utcOffset >= 0 ? '+' : '-';
-    const offsetHours = Math.abs(utcOffset).toString().padStart(2, '0');
-    document.getElementById('utc-offset')!.textContent = `${offsetSign}${offsetHours}:00`;
+      const utcOffset = -now.getTimezoneOffset() / 60;
+      const offsetSign = utcOffset >= 0 ? '+' : '-';
+      const offsetHours = Math.abs(utcOffset).toString().padStart(2, '0');
+      document.getElementById('utc-offset')!.textContent = `${offsetSign}${offsetHours}:00`;
+    }
 
-    // DateTime Information
-    document.getElementById('local-time')!.textContent = now.toLocaleString();
-    document.getElementById('utc-time')!.textContent = now.toUTCString();
+    // DateTime Information (update every frame)
+    const localTimeOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3,
+      hour12: false
+    };
+    
+    document.getElementById('local-time')!.textContent = now.toLocaleString(undefined, localTimeOptions);
+    
+    const utcTimeFormatted = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
+    document.getElementById('utc-time')!.textContent = utcTimeFormatted;
+    
     document.getElementById('unix-timestamp')!.textContent = Math.floor(now.getTime() / 1000).toString();
+
+    lastUpdate = now.getTime();
+
+    // Schedule next update
+    animationId = requestAnimationFrame(updateDebugInfo);
   }
 
-  // Update immediately
+  // Start the animation loop
   updateDebugInfo();
 
-  // Update every second
-  setInterval(updateDebugInfo, 1000);
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+  });
 </script>
